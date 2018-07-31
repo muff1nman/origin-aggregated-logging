@@ -1,4 +1,4 @@
-FROM centos:centos7
+FROM rhel7:latest
 
 MAINTAINER OpenShift Development <dev@lists.openshift.redhat.com>
 
@@ -23,7 +23,6 @@ ENV ES_CONF=/etc/elasticsearch/ \
     RELEASE_STREAM=origin
 
 ARG OSE_ES_VER=5.6.10.1
-ARG SG_VER=5.6.10-19.2
 
 LABEL io.k8s.description="Elasticsearch container for EFK aggregated logging storage" \
       io.k8s.display-name="Elasticsearch ${ES_VER}" \
@@ -36,6 +35,7 @@ ADD elasticsearch.repo /etc/yum.repos.d/elasticsearch.repo
 # install the RPMs in a separate step so it can be cached
 RUN rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch && \
     yum install -y --setopt=tsflags=nodocs --nogpgcheck \
+                --disablerepo=\* --enablerepo=rhel-7-server-rpms --enablerepo=elasticsearch-5.x \
                 java-${JAVA_VER}-openjdk-headless \
                 elasticsearch-${ES_VER} \
                 PyYAML && \
@@ -49,9 +49,7 @@ ADD probe/ ${ES_HOME}/probe/
 ADD run.sh prep-install.${RELEASE_STREAM} install.sh ${HOME}/
 COPY utils/** /usr/local/bin/
 
-ARG OSE_ES_URL
 ARG PROMETHEUS_EXPORTER_URL=https://github.com/vvanholl/elasticsearch-prometheus-exporter/releases/download/${PROMETHEUS_EXPORTER_VER}/elasticsearch-prometheus-exporter-${PROMETHEUS_EXPORTER_VER}.zip
-ARG SG_URL
 
 RUN ln -s /usr/local/bin/logging ${HOME}/logging && \
     ${HOME}/install.sh && \
