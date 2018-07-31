@@ -15,16 +15,15 @@ ENV ELASTICSEARCH_URL=https://logging-es:9200 \
     RELEASE_STREAM=prod \
     container=oci
 
-ARG LOCAL_REPO
-
 USER 0
 
-RUN if [ -n "${LOCAL_REPO}" ] ; then \
-     curl -s -o /etc/yum.repos.d/local.repo ${LOCAL_REPO} ; \
-    fi
-
-RUN INSTALLED_PKGS="kibana-${KIBANA_VER}*" && \
-    yum install -y --setopt=tsflags=nodocs  ${INSTALLED_PKGS} && \
+ADD kibana.repo /etc/yum.repos.d/kibana.repo
+# install the RPMs in a separate step so it can be cached
+RUN rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch && \
+    INSTALLED_PKGS="kibana-${KIBANA_VER}" && \
+    yum install -y --setopt=tsflags=nodocs \
+    --disablerepo=\* --enablerepo=rhel-7-server-rpms --enablerepo=kibana-5.x \
+    ${INSTALLED_PKGS} && \
     yum clean all
 
 ADD nodescl-node /usr/bin
